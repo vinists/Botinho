@@ -9,7 +9,7 @@ try:
     from decouple import config
     TOKEN = config("token")
 except ImportError:
-    TOKEN = os.environ["token"]
+    TOKEN = os.environ["discord"]
 
 
 logging.basicConfig(level=logging.INFO)
