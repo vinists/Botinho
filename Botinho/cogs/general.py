@@ -15,6 +15,14 @@ class General(commands.Cog):
     async def add(self, ctx, left: int, right: int):
         await ctx.send(left + right)
 
+    # @commands.command(name="join")
+    # async def join(self,ctx: commands.Context):
+    #     channel = getattr(ctx.author.voice, 'channel')
+
+        
+        
+        
+
 
 def setup(bot):
     bot.add_cog(General(bot))
