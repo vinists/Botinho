@@ -14,18 +14,10 @@ except ImportError:
 
 logging.basicConfig(level=logging.INFO)
 
-
 intents = discord.Intents.default()
-bot = commands.Bot(command_prefix="!", intents=intents)
 
-
-@bot.command()
-async def add(ctx, left: int, right: int):
-    await ctx.send(left + right)
-
-@bot.command()
-async def moeda(ctx):
-    await ctx.send("cara" if rd.randint(0,1) == 1 else "coroa")
+bot = commands.AutoShardedBot(command_prefix="!", intents=intents)
+bot.load_extension('cogs.general')
 
 
 bot.run(TOKEN)
