@@ -1,1 +1,1 @@
-worker: python Botinho/Core.py
+worker: python Botinho/Bot.py
