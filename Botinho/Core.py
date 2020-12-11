@@ -2,13 +2,11 @@ from discord.ext import commands
 import random as rd
 import discord
 import logging
-import asyncio
-
+import os
 
 logging.basicConfig(level=logging.INFO)
 
-TOKEN = "Nzg1ODY2MjkzMTAyMjQ3OTM2.X8-FBA.iOd-Wjt0IK0UwckyD6j0b46HOsc"
-
+TOKEN = os.getenv("token")
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
