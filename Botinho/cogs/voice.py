@@ -2,15 +2,21 @@ from discord.ext import commands
 import discord
 import asyncio
 
-import requests
-from decouple import config
-
 import time
 import os
 
+import requests
+try:
+    from decouple import config
+    voicerssKey = config('voice')
+except ImportError:
+    voicerssKey = os.environ['voice']
+
+
+
 def getVoice(output):
 
-    url = f"http://api.voicerss.org/?key={config('voice')}&hl=pt-br&v=Dinis&c=MP3&src={output}"
+    url = f"http://api.voicerss.org/?key={voicerssKey}&hl=pt-br&v=Dinis&c=MP3&src={output}"
     r = requests.get(url, stream=True)
     path = f"temp/{str(time.time()).split('.')[0]}.mp3"
     with open(path, 'wb') as f:
