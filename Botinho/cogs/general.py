@@ -9,7 +9,7 @@ class General(commands.Cog):
     
     @commands.command(name="moeda", aliases=["coin", "coinflip"])
     async def moeda(self, ctx):
-        await ctx.send(rd.choice(["cara", "coroa"]))
+        await ctx.send("cara" if rd.randint(0,1) == 1 else "coroa")
 
     @commands.command(name="add")
     async def add(self, ctx, left: int, right: int):
