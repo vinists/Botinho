@@ -7,7 +7,7 @@ import os
 # To run locally you need to install "python-decouple" with pip and create a .env file with the token.
 try:
     from decouple import config
-    TOKEN = config("token")
+    TOKEN = config("discord")
 except ImportError:
     TOKEN = os.environ["discord"]
 
@@ -19,7 +19,8 @@ intents = discord.Intents.default()
 bot = commands.AutoShardedBot(command_prefix="!", intents=intents)
 
 extensions_list = [
-    'cogs.general'
+    'cogs.general',
+    'cogs.voice'
 ]
 
 for extension in extensions_list:
