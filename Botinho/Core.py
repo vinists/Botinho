@@ -6,7 +6,7 @@ import os
 
 logging.basicConfig(level=logging.INFO)
 
-TOKEN = os.getenv("token")
+TOKEN = os.environ["token"]
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
