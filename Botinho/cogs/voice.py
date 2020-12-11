@@ -41,14 +41,14 @@ class Voice(commands.Cog):
 
         if channel != None:
             vc = await channel.connect()
-            player = vc.play(discord.FFmpegPCMAudio(path, executable="C:\\Users\Vinicius\\ffmpeg-20200831-4a11a6f-win64-static\\bin\\ffmpeg.exe"), after=lambda e: print('done', e))
+            player = vc.play(discord.FFmpegPCMAudio(path), after=lambda e: print('done', e))
             
             while vc.is_playing():
                 await asyncio.sleep(1)
 
             vc.stop()
             await vc.disconnect()
-            
+
             cleanTemp(path)
         else:
             await ctx.say('User is not in a channel.')
