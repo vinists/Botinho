@@ -18,7 +18,7 @@ vozesShow = "Dinis\nMarcia\nLigia\nYara\nLeonor"
 def getVoice(output, voz="Dinis"):
 
     lang = "pt-pt" if voz == "Leonor" else "pt-br"
-    url = f"http://api.voicerss.org/?key={voicerssKey}&hl={lang}&v={voz}&c=MP3&src={output}"   
+    url = f"http://api.voicerss.org/?key={voicerssKey}&hl={lang}&v={voz}&c=MP3&src={output}&f=12khz_16bit_stereo"   
     r = requests.get(url, stream=True)
     
     path = f"temp/{str(time.time()).split('.')[0]}.mp3"
@@ -55,12 +55,10 @@ class Voice(commands.Cog):
 
     @commands.command(name='falar', aliases=["say", "dizer"],description='Toca audio text-to-speech')
     async def voice(self, ctx: commands.Context, *content):
-        
-        path = getVoice(" ".join(content), voz=self.vozSelected)
-        user = ctx.author
-        channel = ctx.message.author.voice.channel
+        try:
+            channel = ctx.message.author.voice.channel
 
-        if channel != None:
+            path = getVoice(" ".join(content), voz=self.vozSelected)
             vc = await channel.connect()
             player = vc.play(discord.FFmpegPCMAudio(path), after=lambda e: print('done', e))
             
@@ -69,10 +67,10 @@ class Voice(commands.Cog):
 
             vc.stop()
             await vc.disconnect()
-
             cleanTemp(path)
-        else:
-            await ctx.say('User is not in a channel.')
+
+        except AttributeError:
+            await ctx.send("Você não está em um canal de voz.")
         
 
 def setup(bot):
