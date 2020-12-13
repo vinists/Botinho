@@ -58,10 +58,20 @@ class Voice(commands.Cog):
     @commands.command(name='falar', aliases=["say", "dizer"],description='Toca audio text-to-speech')
     async def voice(self, ctx: commands.Context, *content):
         try:
-            channel = ctx.message.author.voice.channel
 
+            if content[0] == "-a":
+                anon = True
+                content = tuple(x for x in content if x != "-a")
+            else:
+                anon = False
+
+            channel = ctx.message.author.voice.channel
             path = getVoice(" ".join(content), voz=self.vozSelected)
+
             if path:
+                if anon:
+                    await ctx.message.delete()
+
                 vc = await channel.connect()
                 player = vc.play(discord.FFmpegPCMAudio(path), after=lambda e: print('done', e))
 
