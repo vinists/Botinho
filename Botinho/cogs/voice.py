@@ -4,6 +4,7 @@ import asyncio
 
 import time
 import os
+import logging
 
 import requests
 try:
@@ -23,11 +24,13 @@ def getVoice(output, voz="Dinis"):
     
     path = f"temp/{str(time.time()).split('.')[0]}.mp3"
 
-    with open(path, 'wb') as f:
-        for chunk in r.iter_content(chunk_size=1024*1024):
-            if chunk:
-                f.write(chunk)
-
+    if r.status_code == 200:
+        with open(path, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024*1024):
+                if chunk:
+                    f.write(chunk)
+    else:
+        return None
     return path
 
 def cleanTemp(fname):
@@ -59,15 +62,18 @@ class Voice(commands.Cog):
             channel = ctx.message.author.voice.channel
 
             path = getVoice(" ".join(content), voz=self.vozSelected)
-            vc = await channel.connect()
-            player = vc.play(discord.FFmpegPCMAudio(path), after=lambda e: print('done', e))
-            
-            while vc.is_playing():
-                await asyncio.sleep(1)
+            if path:
+                vc = await channel.connect()
+                player = vc.play(discord.FFmpegPCMAudio(path), after=lambda e: print('done', e))
 
-            vc.stop()
-            await vc.disconnect()
-            cleanTemp(path)
+                while vc.is_playing():
+                    await asyncio.sleep(1)
+
+                vc.stop()
+                await vc.disconnect()
+                cleanTemp(path)
+            else:
+                await ctx.send("Um erro aconteceu ao processar o áudio, verifique os logs.")
 
         except AttributeError:
             await ctx.send("Você não está em um canal de voz.")
