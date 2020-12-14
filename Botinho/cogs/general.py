@@ -15,11 +15,10 @@ class General(commands.Cog):
     async def add(self, ctx, left: int, right: int):
         await ctx.send(left + right)
 
-    # @commands.command(name="join")
-    # async def join(self,ctx: commands.Context):
-    #     channel = getattr(ctx.author.voice, 'channel')
+    @commands.command(name="escolha", aliases=['choice'], description='Faça o bot escolher por você: !escolha [escolha A] [escolha B] [etc]')
+    async def escolha(self, ctx, *args):
+        await ctx.send(rd.choice(list(args)))
 
-        
         
         
 
