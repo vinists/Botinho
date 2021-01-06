@@ -10,6 +10,8 @@ colorama==0.4.4
 discord.py==1.5.1
 gitdb==4.0.5
 GitPython==3.1.11
+ibm-cloud-sdk-core==1.7.3
+ibm-watson==5.0.2
 idna==2.10
 isort==5.6.4
 lazy-object-proxy==1.4.3
@@ -17,8 +19,10 @@ mccabe==0.6.1
 multidict==4.7.6
 pbr==5.5.1
 pycparser==2.20
+PyJWT==1.7.1
 pylint==2.6.0
 PyNaCl==1.4.0
+python-dateutil==2.8.1
 PyYAML==5.3.1
 requests==2.25.0
 six==1.15.0
@@ -26,5 +30,6 @@ smmap==3.0.4
 stevedore==3.3.0
 toml==0.10.2
 urllib3==1.26.2
+websocket-client==0.48.0
 wrapt==1.12.1
 yarl==1.5.1
