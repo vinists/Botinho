@@ -29,7 +29,7 @@ six==1.15.0
 smmap==3.0.4
 stevedore==3.3.0
 toml==0.10.2
-urllib3==1.26.2
+urllib3==1.26.4
 websocket-client==0.48.0
 wrapt==1.12.1
 yarl==1.5.1
