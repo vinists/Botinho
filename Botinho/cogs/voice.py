@@ -1,40 +1,28 @@
-import time, os
-
 from discord.ext import commands
 import discord
 import asyncio
+
+from Helper import Helper
+
+import os
+
 import requests
 try:
     from decouple import config
     voicerssKey = config('voice')
-    ibmkey = config('ibmkey')
-
 except ImportError:
     voicerssKey = os.environ['voice']
-    ibmkey = os.environ['ibmkey']
 
 
-vozesShow = "Dinis\nMarcia\nLigia\nYara\nLeonor\nIsabela"
+vozesShow = "Dinis\nMarcia\nLigia\nYara\nLeonor"
 
 def getVoice(output, voz="Dinis"):
-    if voz == "Isabela":
-        from ibm_watson import TextToSpeechV1
-        from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 
-        path = f"temp.mp3"
-        voice = "pt-BR_IsabelaV3Voice"
-        url = "https://api.us-south.text-to-speech.watson.cloud.ibm.com/"
-
-        tts = TextToSpeechV1(authenticator=IAMAuthenticator(ibmkey))
-        tts.set_service_url(url)
-        r = tts.synthesize(output, accept="audio/mp3", voice=voice).get_result()
-    else:
-
-        lang = "pt-pt" if voz == "Leonor" else "pt-br"
-        url = f"http://api.voicerss.org/?key={voicerssKey}&hl={lang}&v={voz}&c=MP3&src={output}&f=12khz_16bit_stereo"   
-        r = requests.get(url, stream=True)
+    lang = "pt-pt" if voz == "Leonor" else "pt-br"
+    url = f"http://api.voicerss.org/?key={voicerssKey}&hl={lang}&v={voz}&c=MP3&src={output}&f=12khz_16bit_stereo"   
+    r = requests.get(url, stream=True)
     
-    path = f"temp/{str(time.time()).split('.')[0]}.mp3"
+    path = Helper.get_epoch_filename('mp3')
 
     if r.status_code == 200:
         with open(path, 'wb') as f:
@@ -44,6 +32,9 @@ def getVoice(output, voz="Dinis"):
     else:
         return None
     return path
+
+def cleanTemp(fname):
+    os.remove(fname)
 
 class Voice(commands.Cog):
     def __init__(self, bot):
@@ -55,14 +46,12 @@ class Voice(commands.Cog):
         if cmd == "list":
             await ctx.send(vozesShow.replace(self.vozSelected, f"{self.vozSelected} - Selecionado"))
         elif cmd == "set":
-            if voz:
-                voz = voz.replace(voz[0], voz[0].upper())
-                if voz in vozesShow:
-                    self.vozSelected = voz
-                    await ctx.send("Voz alterada com sucesso para: " + self.vozSelected)
-                else:
-                    await ctx.send("Erro, verifique se inseriu a voz certa (!vozes set [voz desejada]), "
-                                +"use !voz list para listar as vozes disponíveis.")
+            if voz and voz in vozesShow:
+                self.vozSelected = voz
+                await ctx.send("Voz alterada com sucesso para: " + self.vozSelected)
+            else:
+                await ctx.send("Erro, verifique se inseriu a voz certa (!vozes set [voz desejada]), "
+                               +"use !voz list para listar as vozes disponíveis.")
         else:
             await ctx.send("Que? Usa-se assim: !voz [list ou set]. O comando para falar é \"!falar [frase (entre aspas)]\"")
                 
@@ -92,15 +81,16 @@ class Voice(commands.Cog):
 
                 vc.stop()
                 await vc.disconnect()
-                os.remove(path)
+                cleanTemp(path)
             else:
                 await ctx.send("Um erro aconteceu ao processar o áudio, verifique os logs.")
 
-        except AttributeError as e:
-            await ctx.send("Você não está em um canal de voz.", e)
+        except AttributeError:
+            await ctx.send("Você não está em um canal de voz.")
+        
 
 def setup(bot):
     bot.add_cog(Voice(bot))
 
 if __name__ == "__main__":
-    print(getVoice("Isto aqui e um teste."))
+    print(getVoice("Isto aqui é um teste."))

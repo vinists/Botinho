@@ -20,7 +20,8 @@ bot = commands.AutoShardedBot(command_prefix="!", intents=intents)
 
 extensions_list = [
     'cogs.general',
-    'cogs.voice'
+    'cogs.voice',
+    'cogs.music'
 ]
 
 for extension in extensions_list:
