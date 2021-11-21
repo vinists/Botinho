@@ -42,52 +42,6 @@ class VoiceConnectionError(commands.CommandError):
 class InvalidVoiceChannel(VoiceConnectionError):
     """Exception for cases of invalid Voice Channels."""
 
-class YTDLSource(discord.PCMVolumeTransformer):
-
-    def __init__(self, source, *, data, requester):
-        super().__init__(source)
-        self.requester = requester
-
-        self.title = data.get('title')
-        self.web_url = data.get('webpage_url')
-        self.duration = data.get('duration')
-
-    def __getitem__(self, item: str):
-        return self.__getattribute__(item)
-
-    @classmethod
-    async def create_source(cls, ctx, search: str, *, loop, download=False):
-        loop = loop or asyncio.get_event_loop()
-
-        to_run = partial(ytdl.extract_info, url=search, download=download)
-        data = await loop.run_in_executor(None, to_run)
-
-        if 'entries' in data:
-            # take first item from a playlist
-            data = data['entries'][0]
-
-        embed = discord.Embed(title="", description=f"Queued [{data['title']}]({data['webpage_url']}) [{ctx.author.mention}]", color=discord.Color.green())
-        await ctx.send(embed=embed)
-
-        if download:
-            source = ytdl.prepare_filename(data)
-        else:
-            return {'webpage_url': data['webpage_url'], 'requester': ctx.author, 'title': data['title']}
-
-        return cls(discord.FFmpegPCMAudio(source), data=data, requester=ctx.author)
-
-    @classmethod
-    async def regather_stream(cls, data, *, loop):
-        """Used for preparing a stream, instead of downloading.
-        Since Youtube Streaming links expire."""
-        loop = loop or asyncio.get_event_loop()
-        requester = data['requester']
-
-        to_run = partial(ytdl.extract_info, url=data['webpage_url'], download=False)
-        data = await loop.run_in_executor(None, to_run)
-
-        return cls(discord.FFmpegPCMAudio(data['url']), data=data, requester=requester)
-
 class MusicPlayer:
     """A class which is assigned to each guild using the bot for Music.
     This class implements a queue and loop, which allows for different guilds to listen to different playlists
@@ -152,6 +106,55 @@ class MusicPlayer:
         """Disconnect and cleanup the player."""
         return self.bot.loop.create_task(self._cog.cleanup(guild))
 
+class YTDLSource(discord.PCMVolumeTransformer):
+
+    def __init__(self, source, *, data, requester):
+        super().__init__(source)
+        self.requester = requester
+
+        self.title = data.get('title')
+        self.web_url = data.get('webpage_url')
+        self.duration = data.get('duration')
+
+    def __getitem__(self, item: str):
+        return self.__getattribute__(item)
+
+    @classmethod
+    async def create_sources(cls, ctx, search: str, *, loop):
+        loop = loop or asyncio.get_event_loop()
+        
+        to_run = partial(ytdl.extract_info, url=search, download=False)
+        data = await loop.run_in_executor(None, to_run)
+
+        sources = []
+        
+        if 'entries' in data:
+            # take first item from a playlist
+            data = data['entries']
+            first_video = data[0]
+            for video in data:
+                sources.append({'webpage_url': video['webpage_url'], 'requester': ctx.author, 'title': video['title']})
+        
+
+        embed = discord.Embed(title="", description=f"Queued [{first_video['title']}]({first_video['webpage_url']}) [{ctx.author.mention}]", color=discord.Color.green())
+        await ctx.send(embed=embed)
+        
+        return sources
+
+    @classmethod
+    async def regather_stream(cls, data, *, loop):
+        """Used for preparing a stream, instead of downloading.
+        Since Youtube Streaming links expire."""
+        loop = loop or asyncio.get_event_loop()
+        requester = data['requester']
+
+        to_run = partial(ytdl.extract_info, url=data['webpage_url'], download=False)
+        data = await loop.run_in_executor(None, to_run)
+
+        return cls(discord.FFmpegPCMAudio(data['url']), data=data, requester=requester)
+
+
+
 #class Music(commands.Cog):
 class Music(commands.Cog):
     __slots__ = ('bot', 'players')
@@ -200,10 +203,13 @@ class Music(commands.Cog):
             self.players[ctx.guild.id] = player
 
         return player
+    
+    def set_player(self, ctx, player: MusicPlayer):
+        self.players[ctx.guild.id] = player
 
-    @commands.command(name='join', aliases=['connect', 'j'], description="connects to voice")
+    @commands.command(name='join', aliases=['connect', 'j'], description="Conecta a um canal de voz.")
     async def connect_(self, ctx, *, channel: discord.VoiceChannel=None):
-        """Connect to voice.
+        """Conecta a um canal de voz.
         Parameters
         ------------
         channel: discord.VoiceChannel [Optional]
@@ -253,18 +259,19 @@ class Music(commands.Cog):
 
         if not vc:
             await ctx.invoke(self.connect_)
-
         player = self.get_player(ctx)
 
         # If download is False, source will be a dict which will be used later to regather the stream.
         # If download is True, source will be a discord.FFmpegPCMAudio with a VolumeTransformer.
-        source = await YTDLSource.create_source(ctx, search, loop=self.bot.loop, download=False)
+        sources = await YTDLSource.create_sources(ctx, search, loop=self.bot.loop)
+        
+        for source in sources:
+            await player.queue.put(source)
+        #player.queue = newQueue
 
-        await player.queue.put(source)
-
-    @commands.command(name='pause', description="pausa a música")
+    @commands.command(name='pause', alias=["#"], description="pausa a música")
     async def pause_(self, ctx):
-        """Pause the currently playing song."""
+        """Pausa a música atual."""
         vc = ctx.voice_client
 
         if not vc or not vc.is_playing():
@@ -276,9 +283,9 @@ class Music(commands.Cog):
         vc.pause()
         await ctx.send("Paused ⏸️")
 
-    @commands.command(name='resume', description="despausa a musica")
+    @commands.command(name='resume', alias=["/"], description="despausa a musica")
     async def resume_(self, ctx):
-        """Resume the currently paused song."""
+        """Resume a música atual."""
         vc = ctx.voice_client
 
         if not vc or not vc.is_connected():
@@ -290,9 +297,9 @@ class Music(commands.Cog):
         vc.resume()
         await ctx.send("Resuming ⏯️")
 
-    @commands.command(name='skip', description="pula para a próxima música")
+    @commands.command(name='skip', alias=["s"],description="pula para a próxima música")
     async def skip_(self, ctx):
-        """Skip the song."""
+        """Pula a música."""
         vc = ctx.voice_client
 
         if not vc or not vc.is_connected():
@@ -308,7 +315,7 @@ class Music(commands.Cog):
     
     @commands.command(name='remove', aliases=['rm', 'rem'], description="remove uma música espeficica da fila")
     async def remove_(self, ctx, pos : int=None):
-        """Removes specified song from queue"""
+        """Remove uma música específica da lista."""
 
         vc = ctx.voice_client
 
@@ -331,7 +338,7 @@ class Music(commands.Cog):
     
     @commands.command(name='clear', aliases=['clr', 'cl', 'cr'], description="limpa a fila inteira")
     async def clear_(self, ctx):
-        """Deletes entire queue of upcoming songs."""
+        """Limpa a fila inteira."""
 
         vc = ctx.voice_client
 
@@ -343,9 +350,9 @@ class Music(commands.Cog):
         player.queue._queue.clear()
         await ctx.send('**Cleared**')
 
-    @commands.command(name='queue', aliases=['q', 'playlist', 'que'], description="mostra a fila")
+    @commands.command(name='queue', aliases=['fila','lista','q', 'playlist', 'que'], description="mostra a fila")
     async def queue_info(self, ctx):
-        """Retrieve a basic queue of upcoming songs."""
+        """Mostra a lista atual."""
         vc = ctx.voice_client
 
         if not vc or not vc.is_connected():
@@ -378,7 +385,7 @@ class Music(commands.Cog):
 
     @commands.command(name='np', aliases=['song', 'current', 'currentsong', 'playing'], description="mostra a música atual")
     async def now_playing_(self, ctx):
-        """Display information about the currently playing song."""
+        """Mostra a música atual."""
         vc = ctx.voice_client
 
         if not vc or not vc.is_connected():
@@ -404,7 +411,7 @@ class Music(commands.Cog):
         embed.set_author(icon_url=self.bot.user.avatar_url, name=f"Now Playing 🎶")
         await ctx.send(embed=embed)
 
-    @commands.command(name='volume', aliases=['vol', 'v'], description="changes Kermit's volume")
+    @commands.command(name='volume', aliases=['vol', 'v'], description="altera o volume")
     async def change_volume(self, ctx, *, vol: float=None):
         """Change the player volume.
         Parameters
