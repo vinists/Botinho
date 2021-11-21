@@ -25,6 +25,7 @@ ytdl_options = {
     'quiet': True,
     'no_warnings': True,
     'default_search': 'auto',
+    'verbose':True,
     'source_address': '0.0.0.0' # bind to ipv4 since ipv6 addresses cause issues sometimes
 }
 
