@@ -95,7 +95,7 @@ class MusicPlayer:
             self.current = source
 
             self._guild.voice_client.play(source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
-            embed = discord.Embed(title="Now playing", description=f"[{source.title}]({source.web_url}) [{source.requester.mention}]", color=discord.Color.green())
+            embed = discord.Embed(title="Tocando agora", description=f"[{source.title}]({source.web_url}) [{source.requester.mention}]", color=discord.Color.green())
             
             if self.np == None:
                 self.np = await self._channel.send(embed=embed)
