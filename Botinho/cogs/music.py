@@ -22,7 +22,6 @@ ytdl_options = {
     'nocheckcertificate': True,
     'ignoreerrors': False,
     'logtostderr': False,
-    'quiet': True,
     'no_warnings': True,
     'default_search': 'auto',
     'verbose':True,
