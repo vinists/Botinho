@@ -274,15 +274,12 @@ class Music(commands.Cog):
             await ctx.invoke(self.connect_)
         player = self.get_player(ctx)
 
-        # If download is False, source will be a dict which will be used later to regather the stream.
-        # If download is True, source will be a discord.FFmpegPCMAudio with a VolumeTransformer.
         sources = await YTDLSource.create_sources(ctx, search, loop=self.bot.loop)
         
         for source in sources:
             await player.queue.put(source)
-        #player.queue = newQueue
 
-    @commands.command(name='pause', alias=["#"], description="pausa a música")
+    @commands.command(name='pause', aliases=["#"], description="pausa a música")
     async def pause_(self, ctx):
         """Pausa a música atual."""
         vc = ctx.voice_client
@@ -295,7 +292,7 @@ class Music(commands.Cog):
         vc.pause()
         await ctx.send("Paused ⏸️")
 
-    @commands.command(name='resume', alias=["/"], description="despausa a musica")
+    @commands.command(name='resume', aliases=["/"], description="despausa a musica")
     async def resume_(self, ctx):
         """Resume a música atual."""
         vc = ctx.voice_client
@@ -308,7 +305,7 @@ class Music(commands.Cog):
         vc.resume()
         await ctx.send("Resumindo ⏯️")
 
-    @commands.command(name='skip', alias=["s"],description="pula para a próxima música")
+    @commands.command(name='skip', aliases=["s"],description="pula para a próxima música")
     async def skip_(self, ctx):
         """Pula a música."""
         vc = ctx.voice_client
