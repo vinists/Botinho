@@ -239,7 +239,7 @@ class Music(commands.Cog):
             try:
                 channel = ctx.author.voice.channel
             except AttributeError:
-                await ctx.send(embed=self._embed_creator("Nenhum canal para se juntar. Use `,join` de um canal de voz."))
+                await ctx.send(embed=self._embed_creator("Nenhum canal para se juntar. Use `join` de um canal de voz."))
                 raise InvalidVoiceChannel('No channel to join. Please either specify a valid channel or join one.')
 
         vc = ctx.voice_client
@@ -294,7 +294,7 @@ class Music(commands.Cog):
             return
 
         vc.pause()
-        await ctx.send("Paused ⏸️")
+        await ctx.send("Pausado ⏸️")
 
     @commands.command(name='resume', aliases=["/"], description="despausa a musica")
     async def resume_(self, ctx):
@@ -309,7 +309,7 @@ class Music(commands.Cog):
         vc.resume()
         await ctx.send("Resumindo ⏯️")
 
-    @commands.command(name='skip', aliases=["s"],description="pula para a próxima música")
+    @commands.command(name='skip', aliases=["s", "next"],description="pula para a próxima música")
     async def skip_(self, ctx):
         """Pula a música."""
         vc = ctx.voice_client
@@ -338,9 +338,9 @@ class Music(commands.Cog):
             try:
                 s = player.queue._queue[pos-1]
                 del player.queue._queue[pos-1]
-                await ctx.send(embed=self._embed_creator(f"Removed [{s['title']}]({s['webpage_url']}) [{s['requester'].mention}]"))
+                await ctx.send(embed=self._embed_creator(f"Removido [{s['title']}]({s['webpage_url']}) [{s['requester'].mention}]"))
             except:
-                await ctx.send(embed=self._embed_creator(f'Could not find a track for "{pos}"'))
+                await ctx.send(embed=self._embed_creator(f'Não foi possível encontrar música na posição "{pos}"'))
     
     @commands.command(name='clear', aliases=['clr', 'cl', 'cr'], description="limpa a fila inteira")
     async def clear_(self, ctx):
@@ -396,8 +396,7 @@ class Music(commands.Cog):
 
         player = self.get_player(ctx)
         if not player.current:
-            embed = discord.Embed(title="", description="I am currently not playing anything", color=discord.Color.green())
-            return await ctx.send(embed=embed)
+            return await ctx.send(embed=self._embed_creator("Eu não estou tocando nada."))
         
         seconds = vc.source.duration % (24 * 3600) 
         hour = seconds // 3600
@@ -410,7 +409,7 @@ class Music(commands.Cog):
             duration = "%02dm %02ds" % (minutes, seconds)
 
         embed = self._embed_creator("[{vc.source.title}]({vc.source.web_url}) [{vc.source.requester.mention}] | `{duration}`")
-        embed.set_author(icon_url=self.bot.user.avatar_url, name=f"Now Playing 🎶")
+        embed.set_author(icon_url=self.bot.user.avatar_url, name=f"Tocando agora 🎶")
         await ctx.send(embed=embed)
 
     @commands.command(name='volume', aliases=['vol', 'v'], description="altera o volume")
