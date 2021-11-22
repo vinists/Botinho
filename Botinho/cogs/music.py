@@ -136,9 +136,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
             for video in data:
                 sources.append({'webpage_url': video['webpage_url'], 'requester': ctx.author, 'title': video['title']})
         
-
-        embed = discord.Embed(title="", description=f"Queued [{first_video['title']}]({first_video['webpage_url']}) [{ctx.author.mention}]", color=discord.Color.green())
-        await ctx.send(embed=embed)
+                embed = discord.Embed(title="", description=f"Queued [{first_video['title']}]({first_video['webpage_url']}) [{ctx.author.mention}]", color=discord.Color.green())        
+                await ctx.send(embed=embed)
+        else:
+            await ctx.send("Falha ao carregar vídeo/playlist")
         
         return sources
 
