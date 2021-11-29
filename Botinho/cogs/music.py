@@ -122,7 +122,11 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
     def __getitem__(self, item: str):
         return self.__getattribute__(item)
-
+    
+    @staticmethod
+    def insert_into_source(sources, video, author):
+        sources.append({'webpage_url': video['webpage_url'], 'requester': author, 'title': video['title']})
+            
     @classmethod
     async def create_sources(cls, ctx, search: str, *, loop):
         loop = loop or asyncio.get_event_loop()
@@ -133,16 +137,20 @@ class YTDLSource(discord.PCMVolumeTransformer):
         sources = []
         
         if 'entries' in data:
-            # take first item from a playlist
             data = data['entries']
             first_video = data[0]
+            
             for video in data:
-                sources.append({'webpage_url': video['webpage_url'], 'requester': ctx.author, 'title': video['title']})
-        
-            embed = discord.Embed(title="", description=f"Queued [{first_video['title']}]({first_video['webpage_url']}) [{ctx.author.mention}]", color=discord.Color.green())        
-            await ctx.send(embed=embed)
+                cls.insert_into_source(sources, video, ctx.author)
         else:
-            await ctx.send("Falha ao carregar vídeo/playlist")
+            first_video = data
+            cls.insert_into_source(sources, first_video, ctx.author)
+            
+        
+    
+        embed = discord.Embed(title="", description=f"Queued [{first_video['title']}]({first_video['webpage_url']}) [{ctx.author.mention}]", color=discord.Color.green())        
+        await ctx.send(embed=embed)
+        #await ctx.send("Falha ao carregar vídeo/playlist")
         
         return sources
 
