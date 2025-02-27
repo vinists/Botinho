@@ -1,23 +1,21 @@
-import time, os
+import os
 
 from discord.ext import commands
 import discord
 
-from Helper import Helper
+from Helper import utils
 
 import asyncio
 import requests
-try:
-    from decouple import config
-    voicerssKey = config('voice')
-    ibmkey = config('ibmkey')
 
-except ImportError:
-    voicerssKey = os.environ['voice']
-    ibmkey = os.environ['ibmkey']
+from config import Settings, get_settings
+settings: Settings = get_settings()
 
+voicerssKey = settings.voice_token
+ibmkey = settings.ibm_voice_token
 
 voicesString = "Dinis\nMarcia\nLigia\nYara\nLeonor\nIsabela"
+
 
 def getVoice(output, voz="Isabela"):
     if voz == "Isabela":
@@ -37,7 +35,7 @@ def getVoice(output, voz="Isabela"):
         url = f"http://api.voicerss.org/?key={voicerssKey}&hl={lang}&v={voz}&c=MP3&src={output}&f=12khz_16bit_stereo"   
         r = requests.get(url, stream=True)
     
-    path = Helper.get_epoch_filename("mp3")
+    path = utils.get_epoch_filename("mp3")
 
     if r.status_code == 200:
         with open(path, 'wb') as f:
@@ -102,8 +100,9 @@ class Voice(commands.Cog):
         except AttributeError as e:
             await ctx.send("Você não está em um canal de voz.", e)
 
-def setup(bot):
-    bot.add_cog(Voice(bot))
+
+async def setup(bot):
+    await bot.add_cog(Voice(bot))
 
 if __name__ == "__main__":
     print(getVoice("Isto aqui e um teste."))

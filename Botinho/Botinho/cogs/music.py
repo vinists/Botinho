@@ -1,7 +1,5 @@
-from discord.ext import commands
 import discord
-import youtube_dl
-import random
+import yt_dlp as youtube_dl
 
 from discord.ext import commands
 import random
@@ -11,16 +9,17 @@ import traceback
 from async_timeout import timeout
 
 from functools import partial
-import os
 import asyncio
+
+from discord.ext.commands import Cog
 
 ytdl_options = {
     'format': 'bestaudio/best',
     'outtmpl': 'temp/%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'restrictfilenames': True,
-    'noplaylist': True,
+    'noplaylist': False,
     'nocheckcertificate': True,
-    'ignoreerrors': False,
+    'ignoreerrors': True,
     'logtostderr': False,
     'no_warnings': True,
     'default_search': 'auto',
@@ -29,6 +28,7 @@ ytdl_options = {
 }
 
 ffmpeg_options = {
+    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
     'options': '-vn'
 }
 
@@ -55,7 +55,7 @@ class MusicPlayer:
         self.bot = ctx.bot
         self._guild = ctx.guild
         self._channel = ctx.channel
-        self._cog = ctx.cog
+        self._cog: Cog = ctx.cog
 
         self.queue = asyncio.Queue()
         self.next = asyncio.Event()
@@ -110,6 +110,7 @@ class MusicPlayer:
         """Disconnect and cleanup the player."""
         return self.bot.loop.create_task(self._cog.cleanup(guild))
 
+
 class YTDLSource(discord.PCMVolumeTransformer):
 
     def __init__(self, source, *, data, requester):
@@ -145,13 +146,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
         else:
             first_video = data
             cls.insert_into_source(sources, first_video, ctx.author)
-            
-        
-    
+
         embed = discord.Embed(title="", description=f"Queued [{first_video['title']}]({first_video['webpage_url']}) [{ctx.author.mention}]", color=discord.Color.green())        
         await ctx.send(embed=embed)
-        #await ctx.send("Falha ao carregar vídeo/playlist")
-        
+
         return sources
 
     @classmethod
@@ -160,15 +158,13 @@ class YTDLSource(discord.PCMVolumeTransformer):
         Since Youtube Streaming links expire."""
         loop = loop or asyncio.get_event_loop()
         requester = data['requester']
-
+        print(data)
         to_run = partial(ytdl.extract_info, url=data['webpage_url'], download=False)
         data = await loop.run_in_executor(None, to_run)
 
-        return cls(discord.FFmpegPCMAudio(data['url']), data=data, requester=requester)
+        return cls(discord.FFmpegPCMAudio(data['url'], before_options=ffmpeg_options['before_options']), data=data, requester=requester)
 
 
-
-#class Music(commands.Cog):
 class Music(commands.Cog):
     __slots__ = ('bot', 'players')
 
@@ -277,7 +273,7 @@ class Music(commands.Cog):
         search: str [Required]
             The song to search and retrieve using YTDL. This could be a simple search, an ID or URL.
         """
-        await ctx.trigger_typing()
+        await ctx.typing()
 
         vc = ctx.voice_client
 
@@ -389,7 +385,7 @@ class Music(commands.Cog):
         fmt = '\n'.join(f"`{(upcoming.index(_)) + 1}.` [{_['title']}]({_['webpage_url']}) | ` {duration} Requested by: {_['requester']}`\n" for _ in upcoming)
         fmt = f"\n__Now Playing__:\n[{vc.source.title}]({vc.source.web_url}) | ` {duration} Requested by: {vc.source.requester}`\n\n__Up Next:__\n" + fmt + f"\n**{queueSize} songs in queue**"
         embed = discord.Embed(title=f'Queue for {ctx.guild.name}', description=fmt, color=discord.Color.green())
-        embed.set_footer(text=f"{ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+        embed.set_footer(text=f"{ctx.author.display_name}", icon_url=ctx.author.avatar)
 
         await ctx.send(embed=embed)
 
@@ -415,8 +411,8 @@ class Music(commands.Cog):
         else:
             duration = "%02dm %02ds" % (minutes, seconds)
 
-        embed = self._embed_creator("[{vc.source.title}]({vc.source.web_url}) [{vc.source.requester.mention}] | `{duration}`")
-        embed.set_author(icon_url=self.bot.user.avatar_url, name=f"Tocando agora 🎶")
+        embed = self._embed_creator(f"[{vc.source.title}]({vc.source.web_url}) [{vc.source.requester.mention}] | `{duration}`")
+        embed.set_author(icon_url=self.bot.user.avatar, name=f"Tocando agora 🎶")
         await ctx.send(embed=embed)
 
     @commands.command(name='volume', aliases=['vol', 'v'], description="altera o volume")
@@ -433,7 +429,7 @@ class Music(commands.Cog):
             return
         
         if not vol:
-            return await ctx.send(embed=self._embed_creator("🔊 **{(vc.source.volume)*100}%**"))
+            return await ctx.send(embed=self._embed_creator(f"🔊 **{(vc.source.volume)*100}%**"))
 
         if not 0 < vol < 101:
             return await ctx.send(embed=self._embed_creator("Por favor insira um valor de 1 a 100."))
@@ -475,5 +471,6 @@ class Music(commands.Cog):
         
         return await ctx.send("Randomizado 🔀")
 
-def setup(bot):
-    bot.add_cog(Music(bot))
+
+async def setup(bot):
+    await bot.add_cog(Music(bot))

@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+  bot:
+    build: 
+      context: ./Botinho
+      args:
+        discord: ${discord}
+        voice: ${voice}
+        ibmkey: ${ibmkey}
+        dreamstudio: ${dreamstudio}
+        openai: ${openai}
+        redish: ${redish}
+        redisp: ${redisp}
+        prefix: ${prefix}
+    volumes:
+      - ./Botinho:/app
+    restart: "unless-stopped"

@@ -1,6 +1,5 @@
 from discord.ext import commands
 import random as rd
-import discord
 
 
 class General(commands.Cog):
@@ -19,9 +18,10 @@ class General(commands.Cog):
     async def escolha(self, ctx, *args):
         await ctx.send(rd.choice(list(args)))
 
-        
-        
+    @commands.command(name="servercount")
+    async def servercount(self, ctx):
+        await ctx.send(f"O bot está em {len(self.bot.guilds)} servidores")
 
 
-def setup(bot):
-    bot.add_cog(General(bot))
+async def setup(bot):
+    await bot.add_cog(General(bot))
